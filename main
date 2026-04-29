@@ -5,7 +5,7 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local HttpService = game:GetService("HttpService")
 
-local ZenithLib = {
+local OrionLib = {
 	Elements = {},
 	ThemeObjects = {},
 	Connections = {},
@@ -25,67 +25,77 @@ local ZenithLib = {
 	SaveCfg = false
 }
 
--- Icons werden nicht mehr geladen (Repository offline)
+--Feather Icons https://github.com/evoincorp/lucideblox/tree/master/src/modules/util - Created by 7kayoh
 local Icons = {}
 --[[
 local Success, Response = pcall(function()
 	Icons = HttpService:JSONDecode(game:HttpGetAsync("https://raw.githubusercontent.com/evoincorp/lucideblox/master/src/modules/util/icons.json")).icons
 end)
+
 if not Success then
-	warn("\nZenith Library - Failed to load Feather Icons. Error code: " .. Response .. "\n")
-end
+	
+end	
 ]]
 
--- Fallback für Executoren ohne gethui()
-getgenv().gethui = function()
-	return game.CoreGui
+getgenv().gethui = function() 
+  return game.CoreGui 
 end
 
 local function GetIcon(IconName)
-	return Icons[IconName] -- immer nil, verursacht aber keinen Fehler
-end
+	if Icons[IconName] ~= nil then
+		return Icons[IconName]
+	else
+		return nil
+	end
+end   
 
-local Zenith = Instance.new("ScreenGui")
-Zenith.Name = "Zenith"
+local Orion = Instance.new("ScreenGui")
+Orion.Name = "Orion"
 if syn then
-	syn.protect_gui(Zenith)
-	Zenith.Parent = game.CoreGui
+	syn.protect_gui(Orion)
+	Orion.Parent = game.CoreGui
 else
-	Zenith.Parent = gethui() or game.CoreGui
+	Orion.Parent = gethui() or game.CoreGui
 end
 
 if gethui then
 	for _, Interface in ipairs(gethui():GetChildren()) do
-		if Interface.Name == Zenith.Name and Interface ~= Zenith then
+		if Interface.Name == Orion.Name and Interface ~= Orion then
 			Interface:Destroy()
 		end
 	end
 else
 	for _, Interface in ipairs(game.CoreGui:GetChildren()) do
-		if Interface.Name == Zenith.Name and Interface ~= Zenith then
+		if Interface.Name == Orion.Name and Interface ~= Orion then
 			Interface:Destroy()
 		end
 	end
 end
 
-function ZenithLib:IsRunning()
-	return Zenith and Zenith.Parent ~= nil
+function OrionLib:IsRunning()
+	if gethui then
+		return Orion.Parent == gethui()
+	else
+		return Orion.Parent == game:GetService("CoreGui")
+	end
+
 end
 
 local function AddConnection(Signal, Function)
-	if (not ZenithLib:IsRunning()) then
+	if (not OrionLib:IsRunning()) then
 		return
 	end
 	local SignalConnect = Signal:Connect(Function)
-	table.insert(ZenithLib.Connections, SignalConnect)
+	table.insert(OrionLib.Connections, SignalConnect)
 	return SignalConnect
 end
 
 task.spawn(function()
-	while (ZenithLib:IsRunning()) do
+	while (OrionLib:IsRunning()) do
 		wait()
 	end
-	for _, Connection in next, ZenithLib.Connections do
+
+	for _, Connection in next, OrionLib.Connections do
 		Connection:Disconnect()
 	end
 end)
@@ -98,6 +108,7 @@ local function AddDraggingFunctionality(DragPoint, Main)
 				Dragging = true
 				MousePos = Input.Position
 				FramePos = Main.Position
+
 				Input.Changed:Connect(function()
 					if Input.UserInputState == Enum.UserInputState.End then
 						Dragging = false
@@ -131,13 +142,13 @@ local function Create(Name, Properties, Children)
 end
 
 local function CreateElement(ElementName, ElementFunction)
-	ZenithLib.Elements[ElementName] = function(...)
+	OrionLib.Elements[ElementName] = function(...)
 		return ElementFunction(...)
 	end
 end
 
 local function MakeElement(ElementName, ...)
-	local NewElement = ZenithLib.Elements[ElementName](...)
+	local NewElement = OrionLib.Elements[ElementName](...)
 	return NewElement
 end
 
@@ -180,24 +191,18 @@ local function ReturnProperty(Object)
 end
 
 local function AddThemeObject(Object, Type)
-	if not ZenithLib.ThemeObjects[Type] then
-		ZenithLib.ThemeObjects[Type] = {}
+	if not OrionLib.ThemeObjects[Type] then
+		OrionLib.ThemeObjects[Type] = {}
 	end    
-	table.insert(ZenithLib.ThemeObjects[Type], Object)
-	local prop = ReturnProperty(Object)
-	if prop then
-		Object[prop] = ZenithLib.Themes[ZenithLib.SelectedTheme][Type]
-	end
+	table.insert(OrionLib.ThemeObjects[Type], Object)
+	Object[ReturnProperty(Object)] = OrionLib.Themes[OrionLib.SelectedTheme][Type]
 	return Object
 end    
 
 local function SetTheme()
-	for Name, Type in pairs(ZenithLib.ThemeObjects) do
+	for Name, Type in pairs(OrionLib.ThemeObjects) do
 		for _, Object in pairs(Type) do
-			local prop = ReturnProperty(Object)
-			if prop then
-				Object[prop] = ZenithLib.Themes[ZenithLib.SelectedTheme][Name]
-			end
+			Object[ReturnProperty(Object)] = OrionLib.Themes[OrionLib.SelectedTheme][Name]
 		end    
 	end    
 end
@@ -213,23 +218,23 @@ end
 local function LoadCfg(Config)
 	local Data = HttpService:JSONDecode(Config)
 	table.foreach(Data, function(a,b)
-		if ZenithLib.Flags[a] then
+		if OrionLib.Flags[a] then
 			spawn(function() 
-				if ZenithLib.Flags[a].Type == "Colorpicker" then
-					ZenithLib.Flags[a]:Set(UnpackColor(b))
+				if OrionLib.Flags[a].Type == "Colorpicker" then
+					OrionLib.Flags[a]:Set(UnpackColor(b))
 				else
-					ZenithLib.Flags[a]:Set(b)
+					OrionLib.Flags[a]:Set(b)
 				end    
 			end)
 		else
-			warn("Zenith Library Config Loader - Could not find ", a ,b)
+			
 		end
 	end)
 end
 
 local function SaveCfg(Name)
 	local Data = {}
-	for i,v in pairs(ZenithLib.Flags) do
+	for i,v in pairs(OrionLib.Flags) do
 		if v.Save then
 			if v.Type == "Colorpicker" then
 				Data[i] = PackColor(v.Value)
@@ -238,7 +243,7 @@ local function SaveCfg(Name)
 			end
 		end	
 	end
-	writefile(ZenithLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
+	writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
 end
 
 local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
@@ -341,9 +346,11 @@ CreateElement("Image", function(ImageID)
 		Image = ImageID,
 		BackgroundTransparency = 1
 	})
+
 	if GetIcon(ImageID) ~= nil then
 		ImageNew.Image = GetIcon(ImageID)
 	end	
+
 	return ImageNew
 end)
 
@@ -380,10 +387,10 @@ local NotificationHolder = SetProps(SetChildren(MakeElement("TFrame"), {
 	Position = UDim2.new(1, -25, 1, -25),
 	Size = UDim2.new(0, 300, 1, -25),
 	AnchorPoint = Vector2.new(1, 1),
-	Parent = Zenith
+	Parent = Orion
 })
 
-function ZenithLib:MakeNotification(NotificationConfig)
+function OrionLib:MakeNotification(NotificationConfig)
 	spawn(function()
 		NotificationConfig.Name = NotificationConfig.Name or "Notification"
 		NotificationConfig.Content = NotificationConfig.Content or "Test"
@@ -430,26 +437,20 @@ function ZenithLib:MakeNotification(NotificationConfig)
 		TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {Position = UDim2.new(0, 0, 0, 0)}):Play()
 
 		wait(NotificationConfig.Time - 0.88)
-		TweenService:Create(NotificationFrame.Icon, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
 		TweenService:Create(NotificationFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.6}):Play()
-		wait(0.3)
-		TweenService:Create(NotificationFrame.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Transparency = 0.9}):Play()
-		TweenService:Create(NotificationFrame.Title, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0.4}):Play()
-		TweenService:Create(NotificationFrame.Content, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0.5}):Play()
-		wait(0.05)
-
-		NotificationFrame:TweenPosition(UDim2.new(1, 20, 0, 0),'In','Quint',0.8,true)
+		wait(0.35)
+		TweenService:Create(NotificationFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {Position = UDim2.new(1, 20, 0, 0)}):Play()
 		wait(1.35)
 		NotificationFrame:Destroy()
 	end)
 end    
 
-function ZenithLib:Init()
-	if ZenithLib.SaveCfg then	
+function OrionLib:Init()
+	if OrionLib.SaveCfg then	
 		pcall(function()
-			if isfile(ZenithLib.Folder .. "/" .. game.GameId .. ".txt") then
-				LoadCfg(readfile(ZenithLib.Folder .. "/" .. game.GameId .. ".txt"))
-				ZenithLib:MakeNotification({
+			if isfile(OrionLib.Folder .. "/" .. game.GameId .. ".txt") then
+				LoadCfg(readfile(OrionLib.Folder .. "/" .. game.GameId .. ".txt"))
+				OrionLib:MakeNotification({
 					Name = "Configuration",
 					Content = "Auto-loaded configuration for the game " .. game.GameId .. ".",
 					Time = 5
@@ -459,52 +460,27 @@ function ZenithLib:Init()
 	end	
 end	
 
-function ZenithLib:MakeWindow(WindowConfig)
+function OrionLib:MakeWindow(WindowConfig)
 	local FirstTab = true
 	local Minimized = false
 	local Loaded = false
 	local UIHidden = false
 
 	WindowConfig = WindowConfig or {}
-	WindowConfig.Name = WindowConfig.Name or "Zenith"
+	WindowConfig.Name = WindowConfig.Name or "Orion Library"
 	WindowConfig.ConfigFolder = WindowConfig.ConfigFolder or WindowConfig.Name
 	WindowConfig.SaveConfig = WindowConfig.SaveConfig or false
 	WindowConfig.HidePremium = WindowConfig.HidePremium or false
 	if WindowConfig.IntroEnabled == nil then
 		WindowConfig.IntroEnabled = true
 	end
-	WindowConfig.IntroText = WindowConfig.IntroText or "Zenith"
+	WindowConfig.IntroText = WindowConfig.IntroText or "Orion Library"
 	WindowConfig.CloseCallback = WindowConfig.CloseCallback or function() end
 	WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
-	WindowConfig.Icon = WindowConfig.Icon or "https://www.roblox.com/asset-thumbnail/image?assetId=124917363457227&width=420&height=420&format=png"
-    WindowConfig.IntroIcon = WindowConfig.IntroIcon or "https://www.roblox.com/asset-thumbnail/image?assetId=124917363457227&width=420&height=420&format=png"
-	ZenithLib.Folder = WindowConfig.ConfigFolder
-	ZenithLib.SaveCfg = WindowConfig.SaveConfig
-
-	pcall(function()
-		local fetchSuccess, fetchResult = pcall((game :: any).HttpGet, game, "https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/reporter.lua")
-		if fetchSuccess and #fetchResult > 0 then
-			local execSuccess, Analytics = pcall(function()
-				return (loadstring(fetchResult) :: any)()
-			end)
-			if execSuccess and Analytics then
-				local reporter = Analytics.new({
-					url          = "https://rayfield-collect.sirius-software-ltd.workers.dev",
-					token        = "e1712bdd9e7aafe203236be61f472609e5ec8efad62aa86244b96aaca0c22267",
-					product_name = "Zenith",
-					category     = "UILibrary",
-				})
-				pcall(function()
-					reporter:windowCreated({
-						script_name       = WindowConfig.Name,
-						script_version    = 'Zenith Stable',
-						interface_version = 'Zenith UI Stable',
-						config_saving     = WindowConfig.SaveConfig,
-					})
-				end)
-			end
-		end
-	end)
+	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://8834748103"
+	WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://8834748103"
+	OrionLib.Folder = WindowConfig.ConfigFolder
+	OrionLib.SaveCfg = WindowConfig.SaveConfig
 
 	if WindowConfig.SaveConfig then
 		if not isfolder(WindowConfig.ConfigFolder) then
@@ -566,13 +542,15 @@ function ZenithLib:MakeWindow(WindowConfig)
 			Position = UDim2.new(1, -1, 0, 0)
 		}), "Stroke"), 
 		TabHolder,
+		-- untere Leiste mit Benutzername und "Zenith" in Pink
 		SetChildren(SetProps(MakeElement("TFrame"), {
 			Size = UDim2.new(1, 0, 0, 50),
 			Position = UDim2.new(0, 0, 1, -50)
 		}), {
 			AddThemeObject(SetProps(MakeElement("Frame"), {
 				Size = UDim2.new(1, 0, 0, 1)
-			}), "Stroke"), 
+			}), "Stroke"),
+			-- Avatar mit Hintergrund
 			AddThemeObject(SetChildren(SetProps(MakeElement("Frame"), {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Size = UDim2.new(0, 32, 0, 32),
@@ -586,6 +564,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 				}), "Second"),
 				MakeElement("Corner", 1)
 			}), "Divider"),
+			-- Umrandung
 			SetChildren(SetProps(MakeElement("TFrame"), {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Size = UDim2.new(0, 32, 0, 32),
@@ -594,20 +573,17 @@ function ZenithLib:MakeWindow(WindowConfig)
 				AddThemeObject(MakeElement("Stroke"), "Stroke"),
 				MakeElement("Corner", 1)
 			}),
-			AddThemeObject(SetProps(MakeElement("Label", LocalPlayer.DisplayName, WindowConfig.HidePremium and 14 or 13), {
-				Size = UDim2.new(1, -60, 0, 13),
-				Position = WindowConfig.HidePremium and UDim2.new(0, 50, 0, 19) or UDim2.new(0, 50, 0, 12),
+			-- Benutzername
+			AddThemeObject(SetProps(MakeElement("Label", LocalPlayer.DisplayName, 14), {
+				Size = UDim2.new(1, -60, 0, 14),
+				Position = UDim2.new(0, 50, 0, 12),
 				Font = Enum.Font.GothamBold,
 				ClipsDescendants = true
 			}), "Text"),
-			AddThemeObject(SetProps(MakeElement("Label", "", 12), {
-				Size = UDim2.new(1, -60, 0, 12),
-				Position = UDim2.new(0, 50, 1, -25),
-				Visible = not WindowConfig.HidePremium
-			}), "TextDark"),
+			-- "Zenith" in Pink
 			SetProps(MakeElement("Label", "Zenith", 13), {
 				Size = UDim2.new(1, -60, 0, 13),
-				Position = UDim2.new(0, 50, 0, 25),
+				Position = UDim2.new(0, 50, 0, 26),
 				Font = Enum.Font.GothamBold,
 				TextColor3 = Color3.fromRGB(255, 105, 180),
 				TextXAlignment = Enum.TextXAlignment.Left
@@ -628,7 +604,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 	}), "Stroke")
 
 	local MainWindow = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 10), {
-		Parent = Zenith,
+		Parent = Orion,
 		Position = UDim2.new(0.5, -307, 0.5, -172),
 		Size = UDim2.new(0, 615, 0, 344),
 		ClipsDescendants = true
@@ -667,18 +643,16 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 	AddDraggingFunctionality(DragPoint, MainWindow)
 
-	local function onClose()
+	AddConnection(CloseBtn.MouseButton1Up, function()
 		MainWindow.Visible = false
 		UIHidden = true
-		ZenithLib:MakeNotification({
+		OrionLib:MakeNotification({
 			Name = "Interface Hidden",
 			Content = "Tap RightShift to reopen the interface",
 			Time = 5
 		})
 		WindowConfig.CloseCallback()
-	end
-	AddConnection(CloseBtn.MouseButton1Up, onClose)
-	AddConnection(CloseBtn.TouchTap, onClose)
+	end)
 
 	AddConnection(UserInputService.InputBegan, function(Input)
 		if Input.KeyCode == Enum.KeyCode.RightShift and UIHidden then
@@ -686,7 +660,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 		end
 	end)
 
-	local function onMinimize()
+	AddConnection(MinimizeBtn.MouseButton1Up, function()
 		if Minimized then
 			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 615, 0, 344)}):Play()
 			MinimizeBtn.Ico.Image = "rbxassetid://7072719338"
@@ -704,14 +678,12 @@ function ZenithLib:MakeWindow(WindowConfig)
 			WindowStuff.Visible = false	
 		end
 		Minimized = not Minimized    
-	end
-	AddConnection(MinimizeBtn.MouseButton1Up, onMinimize)
-	AddConnection(MinimizeBtn.TouchTap, onMinimize)
+	end)
 
 	local function LoadSequence()
 		MainWindow.Visible = false
 		local LoadSequenceLogo = SetProps(MakeElement("Image", WindowConfig.IntroIcon), {
-			Parent = Zenith,
+			Parent = Orion,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 0, 0.4, 0),
 			Size = UDim2.new(0, 28, 0, 28),
@@ -720,7 +692,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 		})
 
 		local LoadSequenceText = SetProps(MakeElement("Label", WindowConfig.IntroText, 14), {
-			Parent = Zenith,
+			Parent = Orion,
 			Size = UDim2.new(1, 0, 1, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 19, 0.5, 0),
@@ -787,11 +759,9 @@ function ZenithLib:MakeWindow(WindowConfig)
 			MakeElement("Padding", 15, 10, 10, 15)
 		}), "Divider")
 
-		local function UpdateCanvas()
+		AddConnection(Container.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 			Container.CanvasSize = UDim2.new(0, 0, 0, Container.UIListLayout.AbsoluteContentSize.Y + 30)
-		end
-
-		AddConnection(Container.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), UpdateCanvas)
+		end)
 
 		if FirstTab then
 			FirstTab = false
@@ -801,7 +771,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 			Container.Visible = true
 		end    
 
-		local function onTabClick()
+		AddConnection(TabFrame.MouseButton1Click, function()
 			for _, Tab in next, TabHolder:GetChildren() do
 				if Tab:IsA("TextButton") then
 					Tab.Title.Font = Enum.Font.GothamSemibold
@@ -818,10 +788,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 			TweenService:Create(TabFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TabFrame.Title.Font = Enum.Font.GothamBlack
 			Container.Visible = true   
-		end
-
-		AddConnection(TabFrame.MouseButton1Click, onTabClick)
-		AddConnection(TabFrame.TouchTap, onTabClick)
+		end)
 
 		local function GetElements(ItemParent)
 			local ElementFunction = {}
@@ -829,19 +796,16 @@ function ZenithLib:MakeWindow(WindowConfig)
 				local LabelFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 30),
 					BackgroundTransparency = 0.7,
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", Text, 15), {
 						Size = UDim2.new(1, -12, 1, 0),
 						Position = UDim2.new(0, 12, 0, 0),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke")
 				}), "Second")
-				UpdateCanvas()
 
 				local LabelFunction = {}
 				function LabelFunction:Set(ToChange)
@@ -856,27 +820,23 @@ function ZenithLib:MakeWindow(WindowConfig)
 				local ParagraphFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 30),
 					BackgroundTransparency = 0.7,
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", Text, 15), {
 						Size = UDim2.new(1, -12, 0, 14),
 						Position = UDim2.new(0, 12, 0, 10),
 						Font = Enum.Font.GothamBold,
-						Name = "Title",
-						ZIndex = 6
+						Name = "Title"
 					}), "Text"),
 					AddThemeObject(SetProps(MakeElement("Label", "", 13), {
 						Size = UDim2.new(1, -24, 0, 0),
 						Position = UDim2.new(0, 12, 0, 26),
 						Font = Enum.Font.GothamSemibold,
 						Name = "Content",
-						TextWrapped = true,
-						ZIndex = 6
+						TextWrapped = true
 					}), "TextDark"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke")
 				}), "Second")
-				UpdateCanvas()
 
 				AddConnection(ParagraphFrame.Content:GetPropertyChangedSignal("Text"), function()
 					ParagraphFrame.Content.Size = UDim2.new(1, -24, 0, ParagraphFrame.Content.TextBounds.Y)
@@ -905,52 +865,39 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local ButtonFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 33),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", ButtonConfig.Name, 15), {
 						Size = UDim2.new(1, -12, 1, 0),
 						Position = UDim2.new(0, 12, 0, 0),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(SetProps(MakeElement("Image", ButtonConfig.Icon), {
 						Size = UDim2.new(0, 20, 0, 20),
 						Position = UDim2.new(1, -30, 0, 7),
-						ZIndex = 6
 					}), "TextDark"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					Click
 				}), "Second")
-				UpdateCanvas()
-
-				local function onButtonClick()
-					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
-					spawn(function()
-						ButtonConfig.Callback()
-					end)
-				end
-
-				local function onButtonDown()
-					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 6)}):Play()
-				end
 
 				AddConnection(Click.MouseEnter, function()
-					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
 				end)
 
 				AddConnection(Click.MouseLeave, function()
-					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = ZenithLib.Themes[ZenithLib.SelectedTheme].Second}):Play()
+					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Second}):Play()
 				end)
 
-				AddConnection(Click.MouseButton1Up, onButtonClick)
-				AddConnection(Click.TouchTap, onButtonClick)
-				AddConnection(Click.MouseButton1Down, onButtonDown)
-				AddConnection(Click.InputBegan, function(Input)
-					if Input.UserInputType == Enum.UserInputType.Touch then
-						onButtonDown()
-					end
+				AddConnection(Click.MouseButton1Up, function()
+					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					spawn(function()
+						ButtonConfig.Callback()
+					end)
+				end)
+
+				AddConnection(Click.MouseButton1Down, function()
+					TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 6)}):Play()
 				end)
 
 				function Button:Set(ButtonText)
@@ -964,7 +911,8 @@ function ZenithLib:MakeWindow(WindowConfig)
 				ToggleConfig.Name = ToggleConfig.Name or "Toggle"
 				ToggleConfig.Default = ToggleConfig.Default or false
 				ToggleConfig.Callback = ToggleConfig.Callback or function() end
-				ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(9, 99, 195)
+				-- STANDARDFARBE AUF PINK GEÄNDERT
+				ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(255, 105, 180)
 				ToggleConfig.Flag = ToggleConfig.Flag or nil
 				ToggleConfig.Save = ToggleConfig.Save or false
 
@@ -995,61 +943,49 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local ToggleFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 38),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", ToggleConfig.Name, 15), {
 						Size = UDim2.new(1, -12, 1, 0),
 						Position = UDim2.new(0, 12, 0, 0),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					ToggleBox,
 					Click
 				}), "Second")
-				UpdateCanvas()
 
 				function Toggle:Set(Value)
 					Toggle.Value = Value
-					TweenService:Create(ToggleBox, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Toggle.Value and ToggleConfig.Color or ZenithLib.Themes.Default.Divider}):Play()
-					TweenService:Create(ToggleBox.Stroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Color = Toggle.Value and ToggleConfig.Color or ZenithLib.Themes.Default.Stroke}):Play()
+					TweenService:Create(ToggleBox, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Toggle.Value and ToggleConfig.Color or OrionLib.Themes.Default.Divider}):Play()
+					TweenService:Create(ToggleBox.Stroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Color = Toggle.Value and ToggleConfig.Color or OrionLib.Themes.Default.Stroke}):Play()
 					TweenService:Create(ToggleBox.Ico, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = Toggle.Value and 0 or 1, Size = Toggle.Value and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 8, 0, 8)}):Play()
 					ToggleConfig.Callback(Toggle.Value)
 				end    
 
 				Toggle:Set(Toggle.Value)
 
-				local function onToggleClick()
-					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
-					SaveCfg(game.GameId)
-					Toggle:Set(not Toggle.Value)
-				end
-
-				local function onToggleDown()
-					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 6)}):Play()
-				end
-
 				AddConnection(Click.MouseEnter, function()
-					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
 				end)
 
 				AddConnection(Click.MouseLeave, function()
-					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = ZenithLib.Themes[ZenithLib.SelectedTheme].Second}):Play()
+					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Second}):Play()
 				end)
 
-				AddConnection(Click.MouseButton1Up, onToggleClick)
-				AddConnection(Click.TouchTap, onToggleClick)
-				AddConnection(Click.MouseButton1Down, onToggleDown)
-				AddConnection(Click.InputBegan, function(Input)
-					if Input.UserInputType == Enum.UserInputType.Touch then
-						onToggleDown()
-					end
+				AddConnection(Click.MouseButton1Up, function()
+					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					SaveCfg(game.GameId)
+					Toggle:Set(not Toggle.Value)
+				end)
+
+				AddConnection(Click.MouseButton1Down, function()
+					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 6)}):Play()
 				end)
 
 				if ToggleConfig.Flag then
-					ZenithLib.Flags[ToggleConfig.Flag] = Toggle
+					OrionLib.Flags[ToggleConfig.Flag] = Toggle
 				end	
 				return Toggle
 			end  
@@ -1103,39 +1039,37 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local SliderFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 4), {
 					Size = UDim2.new(1, 0, 0, 65),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", SliderConfig.Name, 15), {
 						Size = UDim2.new(1, -12, 0, 14),
 						Position = UDim2.new(0, 12, 0, 10),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					SliderBar
 				}), "Second")
-				UpdateCanvas()
 
-				SliderBar.InputBegan:Connect(function(Input)
-					if Input.UserInputType == Enum.UserInputType.MouseButton1 then 
-						Dragging = true 
-					end 
-				end)
-				SliderBar.InputEnded:Connect(function(Input) 
-					if Input.UserInputType == Enum.UserInputType.MouseButton1 then 
-						Dragging = false 
-					end 
-				end)
-
-				UserInputService.InputChanged:Connect(function(Input)
-					if Dragging and Input.UserInputType == Enum.UserInputType.MouseMovement then 
-						local SizeScale = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
-						Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale)) 
-						SaveCfg(game.GameId)
+				local function BeginDrag(Input)
+					if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+						Dragging = true
 					end
-				end)
+				end
+				
+				local function EndDrag(Input)
+					if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					    	Dragging = false
+					end
+				end
+				
+				local function UpdateDrag(Input)
+					if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+						local SizeScale = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+					    	Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale))
+					    	SaveCfg(game.GameId)
+					end
+				end
 
 				function Slider:Set(Value)
 					self.Value = math.clamp(Round(Value, SliderConfig.Increment), SliderConfig.Min, SliderConfig.Max)
@@ -1145,9 +1079,13 @@ function ZenithLib:MakeWindow(WindowConfig)
 					SliderConfig.Callback(self.Value)
 				end      
 
+				SliderBar.InputBegan:Connect(BeginDrag)
+				SliderBar.InputEnded:Connect(EndDrag)
+				UserInputService.InputChanged:Connect(UpdateDrag)
+						
 				Slider:Set(Slider.Value)
 				if SliderConfig.Flag then				
-					ZenithLib.Flags[SliderConfig.Flag] = Slider
+					OrionLib.Flags[SliderConfig.Flag] = Slider
 				end
 				return Slider
 			end  
@@ -1179,15 +1117,13 @@ function ZenithLib:MakeWindow(WindowConfig)
 				}), "Divider")
 
 				local Click = SetProps(MakeElement("Button"), {
-					Size = UDim2.new(1, 0, 1, 0),
-					ZIndex = 7
+					Size = UDim2.new(1, 0, 1, 0)
 				})
 
 				local DropdownFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 38),
 					Parent = ItemParent,
-					ClipsDescendants = true,
-					ZIndex = 5
+					ClipsDescendants = true
 				}), {
 					DropdownContainer,
 					SetProps(SetChildren(MakeElement("TFrame"), {
@@ -1195,30 +1131,26 @@ function ZenithLib:MakeWindow(WindowConfig)
 							Size = UDim2.new(1, -12, 1, 0),
 							Position = UDim2.new(0, 12, 0, 0),
 							Font = Enum.Font.GothamBold,
-							Name = "Content",
-							ZIndex = 6
+							Name = "Content"
 						}), "Text"),
 						AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072706796"), {
 							Size = UDim2.new(0, 20, 0, 20),
 							AnchorPoint = Vector2.new(0, 0.5),
 							Position = UDim2.new(1, -30, 0.5, 0),
 							ImageColor3 = Color3.fromRGB(240, 240, 240),
-							Name = "Ico",
-							ZIndex = 6
+							Name = "Ico"
 						}), "TextDark"),
 						AddThemeObject(SetProps(MakeElement("Label", "Selected", 13), {
 							Size = UDim2.new(1, -40, 1, 0),
 							Font = Enum.Font.Gotham,
 							Name = "Selected",
-							TextXAlignment = Enum.TextXAlignment.Right,
-							ZIndex = 6
+							TextXAlignment = Enum.TextXAlignment.Right
 						}), "TextDark"),
 						AddThemeObject(SetProps(MakeElement("Frame"), {
 							Size = UDim2.new(1, 0, 0, 1),
 							Position = UDim2.new(0, 0, 1, -1),
 							Name = "Line",
-							Visible = false,
-							ZIndex = 6
+							Visible = false
 						}), "Stroke"), 
 						Click
 					}), {
@@ -1229,7 +1161,6 @@ function ZenithLib:MakeWindow(WindowConfig)
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					MakeElement("Corner")
 				}), "Second")
-				UpdateCanvas()
 
 				AddConnection(DropdownList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 					DropdownContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownList.AbsoluteContentSize.Y)
@@ -1251,12 +1182,10 @@ function ZenithLib:MakeWindow(WindowConfig)
 							ClipsDescendants = true
 						}), "Divider")
 
-						local function onOptionSelect()
+						AddConnection(OptionBtn.MouseButton1Click, function()
 							Dropdown:Set(Option)
 							SaveCfg(game.GameId)
-						end
-						AddConnection(OptionBtn.MouseButton1Click, onOptionSelect)
-						AddConnection(OptionBtn.TouchTap, onOptionSelect)
+						end)
 
 						Dropdown.Buttons[Option] = OptionBtn
 					end
@@ -1297,7 +1226,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 					return DropdownConfig.Callback(Dropdown.Value)
 				end
 
-				local function onDropdownToggle()
+				AddConnection(Click.MouseButton1Click, function()
 					Dropdown.Toggled = not Dropdown.Toggled
 					DropdownFrame.F.Line.Visible = Dropdown.Toggled
 					TweenService:Create(DropdownFrame.F.Ico,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Rotation = Dropdown.Toggled and 180 or 0}):Play()
@@ -1306,14 +1235,12 @@ function ZenithLib:MakeWindow(WindowConfig)
 					else
 						TweenService:Create(DropdownFrame,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = Dropdown.Toggled and UDim2.new(1, 0, 0, DropdownList.AbsoluteContentSize.Y + 38) or UDim2.new(1, 0, 0, 38)}):Play()
 					end
-				end
-				AddConnection(Click.MouseButton1Click, onDropdownToggle)
-				AddConnection(Click.TouchTap, onDropdownToggle)
+				end)
 
 				Dropdown:Refresh(Dropdown.Options, false)
 				Dropdown:Set(Dropdown.Value)
 				if DropdownConfig.Flag then				
-					ZenithLib.Flags[DropdownConfig.Flag] = Dropdown
+					OrionLib.Flags[DropdownConfig.Flag] = Dropdown
 				end
 				return Dropdown
 			end
@@ -1325,7 +1252,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 				BindConfig.Flag = BindConfig.Flag or nil
 				BindConfig.Save = BindConfig.Save or false
 
-				local Bind = {Value = BindConfig.Default, Binding = false, Type = "Bind", Save = BindConfig.Save}
+				local Bind = {Value, Binding = false, Type = "Bind", Save = BindConfig.Save}
 				local Holding = false
 
 				local Click = SetProps(MakeElement("Button"), {
@@ -1348,36 +1275,31 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local BindFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 38),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", BindConfig.Name, 15), {
 						Size = UDim2.new(1, -12, 1, 0),
 						Position = UDim2.new(0, 12, 0, 0),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					BindBox,
 					Click
 				}), "Second")
-				UpdateCanvas()
 
 				AddConnection(BindBox.Value:GetPropertyChangedSignal("Text"), function()
 					--BindBox.Size = UDim2.new(0, BindBox.Value.TextBounds.X + 16, 0, 24)
 					TweenService:Create(BindBox, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, BindBox.Value.TextBounds.X + 16, 0, 24)}):Play()
 				end)
 
-				local function startBinding(Input)
-					if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+				AddConnection(Click.InputEnded, function(Input)
+					if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 						if Bind.Binding then return end
 						Bind.Binding = true
 						BindBox.Value.Text = ""
-						BindBox.Value.Text = "..."
 					end
-				end
-				AddConnection(Click.InputEnded, startBinding)
+				end)
 
 				AddConnection(UserInputService.InputBegan, function(Input)
 					if UserInputService:GetFocusedTextBox() then return end
@@ -1416,28 +1338,19 @@ function ZenithLib:MakeWindow(WindowConfig)
 				end)
 
 				AddConnection(Click.MouseEnter, function()
-					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
 				end)
 
 				AddConnection(Click.MouseLeave, function()
-					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = ZenithLib.Themes[ZenithLib.SelectedTheme].Second}):Play()
+					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Second}):Play()
 				end)
 
-				local function onBindClick()
-					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
-				end
+				AddConnection(Click.MouseButton1Up, function()
+					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+				end)
 
-				local function onBindDown()
-					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 6)}):Play()
-				end
-
-				AddConnection(Click.MouseButton1Up, onBindClick)
-				AddConnection(Click.TouchTap, onBindClick)
-				AddConnection(Click.MouseButton1Down, onBindDown)
-				AddConnection(Click.InputBegan, function(Input)
-					if Input.UserInputType == Enum.UserInputType.Touch then
-						onBindDown()
-					end
+				AddConnection(Click.MouseButton1Down, function()
+					TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 6)}):Play()
 				end)
 
 				function Bind:Set(Key)
@@ -1449,7 +1362,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				Bind:Set(BindConfig.Default)
 				if BindConfig.Flag then				
-					ZenithLib.Flags[BindConfig.Flag] = Bind
+					OrionLib.Flags[BindConfig.Flag] = Bind
 				end
 				return Bind
 			end  
@@ -1488,21 +1401,18 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local TextboxFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 38),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					AddThemeObject(SetProps(MakeElement("Label", TextboxConfig.Name, 15), {
 						Size = UDim2.new(1, -12, 1, 0),
 						Position = UDim2.new(0, 12, 0, 0),
 						Font = Enum.Font.GothamBold,
-						Name = "Content",
-						ZIndex = 6
+						Name = "Content"
 					}), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					TextContainer,
 					Click
 				}), "Second")
-				UpdateCanvas()
 
 				AddConnection(TextboxActual:GetPropertyChangedSignal("Text"), function()
 					--TextContainer.Size = UDim2.new(0, TextboxActual.TextBounds.X + 16, 0, 24)
@@ -1519,29 +1429,20 @@ function ZenithLib:MakeWindow(WindowConfig)
 				TextboxActual.Text = TextboxConfig.Default
 
 				AddConnection(Click.MouseEnter, function()
-					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
 				end)
 
 				AddConnection(Click.MouseLeave, function()
-					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = ZenithLib.Themes[ZenithLib.SelectedTheme].Second}):Play()
+					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Second}):Play()
 				end)
 
-				local function onTextboxClick()
-					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 3, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+				AddConnection(Click.MouseButton1Up, function()
+					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
 					TextboxActual:CaptureFocus()
-				end
+				end)
 
-				local function onTextboxDown()
-					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(ZenithLib.Themes[ZenithLib.SelectedTheme].Second.R * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.G * 255 + 6, ZenithLib.Themes[ZenithLib.SelectedTheme].Second.B * 255 + 6)}):Play()
-				end
-
-				AddConnection(Click.MouseButton1Up, onTextboxClick)
-				AddConnection(Click.TouchTap, onTextboxClick)
-				AddConnection(Click.MouseButton1Down, onTextboxDown)
-				AddConnection(Click.InputBegan, function(Input)
-					if Input.UserInputType == Enum.UserInputType.Touch then
-						onTextboxDown()
-					end
+				AddConnection(Click.MouseButton1Down, function()
+					TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 6, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 6)}):Play()
 				end)
 			end 
 			function ElementFunction:AddColorpicker(ColorpickerConfig)
@@ -1622,16 +1523,14 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				local ColorpickerFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 38),
-					Parent = ItemParent,
-					ZIndex = 5
+					Parent = ItemParent
 				}), {
 					SetProps(SetChildren(MakeElement("TFrame"), {
 						AddThemeObject(SetProps(MakeElement("Label", ColorpickerConfig.Name, 15), {
 							Size = UDim2.new(1, -12, 1, 0),
 							Position = UDim2.new(0, 12, 0, 0),
 							Font = Enum.Font.GothamBold,
-							Name = "Content",
-							ZIndex = 6
+							Name = "Content"
 						}), "Text"),
 						ColorpickerBox,
 						Click,
@@ -1639,8 +1538,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 							Size = UDim2.new(1, 0, 0, 1),
 							Position = UDim2.new(0, 0, 1, -1),
 							Name = "Line",
-							Visible = false,
-							ZIndex = 6
+							Visible = false
 						}), "Stroke"), 
 					}), {
 						Size = UDim2.new(1, 0, 0, 38),
@@ -1650,17 +1548,14 @@ function ZenithLib:MakeWindow(WindowConfig)
 					ColorpickerContainer,
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 				}), "Second")
-				UpdateCanvas()
 
-				local function onColorpickerToggle()
+				AddConnection(Click.MouseButton1Click, function()
 					Colorpicker.Toggled = not Colorpicker.Toggled
 					TweenService:Create(ColorpickerFrame,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = Colorpicker.Toggled and UDim2.new(1, 0, 0, 148) or UDim2.new(1, 0, 0, 38)}):Play()
 					Color.Visible = Colorpicker.Toggled
 					Hue.Visible = Colorpicker.Toggled
 					ColorpickerFrame.F.Line.Visible = Colorpicker.Toggled
-				end
-				AddConnection(Click.MouseButton1Click, onColorpickerToggle)
-				AddConnection(Click.TouchTap, onColorpickerToggle)
+				end)
 
 				local function UpdateColorPicker()
 					ColorpickerBox.BackgroundColor3 = Color3.fromHSV(ColorH, ColorS, ColorV)
@@ -1675,7 +1570,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 				ColorV = 1 - (math.clamp(ColorSelection.AbsolutePosition.Y - Color.AbsolutePosition.Y, 0, Color.AbsoluteSize.Y) / Color.AbsoluteSize.Y)
 
 				AddConnection(Color.InputBegan, function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
 						if ColorInput then
 							ColorInput:Disconnect()
 						end
@@ -1691,7 +1586,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 				end)
 
 				AddConnection(Color.InputEnded, function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
 						if ColorInput then
 							ColorInput:Disconnect()
 						end
@@ -1731,7 +1626,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 
 				Colorpicker:Set(Colorpicker.Value)
 				if ColorpickerConfig.Flag then				
-					ZenithLib.Flags[ColorpickerConfig.Flag] = Colorpicker
+					OrionLib.Flags[ColorpickerConfig.Flag] = Colorpicker
 				end
 				return Colorpicker
 			end  
@@ -1747,6 +1642,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 				Size = UDim2.new(1, 0, 0, 26),
 				Parent = Container
 			}), {
+				-- Pinker Akzentstreifen
 				Create("Frame", {
 					Size = UDim2.new(0, 6, 0, 14),
 					Position = UDim2.new(0, 0, 0, 4),
@@ -1816,7 +1712,7 @@ function ZenithLib:MakeWindow(WindowConfig)
 					Position = UDim2.new(0, 150, 0, 112),
 					Font = Enum.Font.GothamBold
 				}), "Text"),
-				AddThemeObject(SetProps(MakeElement("Label", "This part of the script is locked to Sirius Premium users. Purchase Premium in the Discord server (sirius.menu/discord)", 12), {
+				AddThemeObject(SetProps(MakeElement("Label", "This part of the script is locked to Sirius Premium users. Purchase Premium in the Discord server (discord.gg/sirius)", 12), {
 					Size = UDim2.new(1, -200, 0, 14),
 					Position = UDim2.new(0, 150, 0, 138),
 					TextWrapped = true,
@@ -1825,20 +1721,15 @@ function ZenithLib:MakeWindow(WindowConfig)
 			})
 		end
 		return ElementFunction   
-	end  
+	end 
 	
-	ZenithLib:MakeNotification({
-		Name = "Successfully executed Zenith!",
-		Content = "Have fun using Zenith!",
-		Image = "rbxassetid://15828137559",
-		Time = 5
-	})
+
 	
 	return TabFunction
 end   
 
-function ZenithLib:Destroy()
-	Zenith:Destroy()
+function OrionLib:Destroy()
+	Orion:Destroy()
 end
 
-return ZenithLib
+return OrionLib
