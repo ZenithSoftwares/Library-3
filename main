@@ -542,7 +542,7 @@ function OrionLib:MakeWindow(WindowConfig)
 			Position = UDim2.new(1, -1, 0, 0)
 		}), "Stroke"), 
 		TabHolder,
-		-- untere Leiste mit Benutzername und "Zenith" in Pink
+		-- untere Leiste mit Benutzername und "LunarX" in Pink
 		SetChildren(SetProps(MakeElement("TFrame"), {
 			Size = UDim2.new(1, 0, 0, 50),
 			Position = UDim2.new(0, 0, 1, -50)
@@ -580,8 +580,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				Font = Enum.Font.GothamBold,
 				ClipsDescendants = true
 			}), "Text"),
-			-- "Zenith" in Pink
-			SetProps(MakeElement("Label", "Zenith", 13), {
+			-- "LunarX" in Pink
+			SetProps(MakeElement("Label", "LunarX", 13), {
 				Size = UDim2.new(1, -60, 0, 13),
 				Position = UDim2.new(0, 50, 0, 26),
 				Font = Enum.Font.GothamBold,
