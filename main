@@ -546,26 +546,24 @@ function OrionLib:MakeWindow(WindowConfig)
 		}), "Text")
 	})
 
-	local MinimizeBtn = SetChildren(SetProps(MakeElement("Button"), {
+	local HideBtn = SetChildren(SetProps(MakeElement("Button"), {
 		Size = UDim2.new(0.33, 0, 1, 0),
 		Position = UDim2.new(0.33, 0, 0, 0),
+		BackgroundTransparency = 1
+	}), {
+		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719545"), {
+			Position = UDim2.new(0, 5, 0, 6),
+			Size = UDim2.new(0, 18, 0, 18)
+		}), "Text")
+	})
+
+	local CollapseBtn = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(0.33, 0, 1, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719338"), {
 			Position = UDim2.new(0, 5, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18),
-			Name = "Ico"
-		}), "Text")
-	})
-
-	local SidebarBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-		BackgroundTransparency = 1
-	}), {
-		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072706796"), {
-			Position = UDim2.new(0, 5, 0, 6),
-			Size = UDim2.new(0, 18, 0, 18),
-			Rotation = 90,
 			Name = "Ico"
 		}), "Text")
 	})
@@ -679,8 +677,8 @@ function OrionLib:MakeWindow(WindowConfig)
 					Size = UDim2.new(0, 1, 1, 0),
 					Position = UDim2.new(0.66, 0, 0, 0)
 				}), "Stroke"), 
-				SidebarBtn,
-				MinimizeBtn,
+				CollapseBtn,
+				HideBtn,
 				CloseBtn
 			}), "Second"), 
 		}),
@@ -716,10 +714,10 @@ function OrionLib:MakeWindow(WindowConfig)
 		end
 	end)
 
-	AddConnection(MinimizeBtn.MouseButton1Up, function()
+	AddConnection(CollapseBtn.MouseButton1Click, function()
 		if Minimized then
 			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 615, 0, 344)}):Play()
-			MinimizeBtn.Ico.Image = "rbxassetid://7072719338"
+			CollapseBtn.Ico.Image = "rbxassetid://7072719338"
 			wait(.02)
 			MainWindow.ClipsDescendants = false
 			WindowStuff.Visible = true
@@ -727,7 +725,7 @@ function OrionLib:MakeWindow(WindowConfig)
 		else
 			MainWindow.ClipsDescendants = true
 			WindowTopBarLine.Visible = false
-			MinimizeBtn.Ico.Image = "rbxassetid://7072720870"
+			CollapseBtn.Ico.Image = "rbxassetid://7072720870"
 
 			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, WindowName.TextBounds.X + 140, 0, 50)}):Play()
 			wait(0.1)
@@ -736,21 +734,18 @@ function OrionLib:MakeWindow(WindowConfig)
 		Minimized = not Minimized    
 	end)
 
-	local SidebarCollapsed = false
-	AddConnection(SidebarBtn.MouseButton1Click, function()
-		SidebarCollapsed = not SidebarCollapsed
-		TweenService:Create(SidebarBtn.Ico, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Rotation = SidebarCollapsed and -90 or 90}):Play()
-		
-		local SidebarTargetPos = SidebarCollapsed and UDim2.new(0, -150, 0, 50) or UDim2.new(0, 0, 0, 50)
-		TweenService:Create(WindowStuff, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = SidebarTargetPos}):Play()
-		
-		for _, v in pairs(MainWindow:GetChildren()) do
-			if v.Name == "ItemContainer" then
-				local ContainerTargetPos = SidebarCollapsed and UDim2.new(0, 0, 0, 50) or UDim2.new(0, 150, 0, 50)
-				local ContainerTargetSize = SidebarCollapsed and UDim2.new(1, 0, 1, -50) or UDim2.new(1, -150, 1, -50)
-				TweenService:Create(v, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = ContainerTargetPos, Size = ContainerTargetSize}):Play()
-			end
-		end
+	AddConnection(HideBtn.MouseButton1Click, function()
+		MainWindow.Visible = false
+		UIHidden = true
+		OrionLib:MakeNotification({
+			Name = "Interface Hidden",
+			Content = "Tap RightShift to reopen the interface",
+			Time = 5
+		})
+	end)
+
+	AddConnection(CloseBtn.MouseButton1Click, function()
+		OrionLib:Destroy()
 	end)
 
 	local function LoadSequence()
