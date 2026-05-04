@@ -528,7 +528,7 @@ function OrionLib:MakeWindow(WindowConfig)
 		Size = UDim2.new(1, 0, 1, -50)
 	}), {
 		MakeElement("List"),
-		MakeElement("Padding", 8, 10, 8, 8)
+		MakeElement("Padding", 8, 0, 0, 8)
 	}), "Divider")
 
 	AddConnection(TabHolder.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
@@ -767,18 +767,9 @@ function OrionLib:MakeWindow(WindowConfig)
 			Size = UDim2.new(1, 0, 0, 24),
 			Parent = TabHolder
 		}), {
-			Create("Frame", {
-				Size = UDim2.new(0, 6, 0, 14),
-				Position = UDim2.new(0, 0, 0, 5),
-				BackgroundColor3 = Color3.fromRGB(255, 105, 180),
-				BorderSizePixel = 0,
-				Name = "AccentBar"
-			}, {
-				Create("UICorner", { CornerRadius = UDim.new(1, 0) })
-			}),
 			AddThemeObject(SetProps(MakeElement("Label", string.upper(TabSectionConfig.Name), 10), {
 				Size = UDim2.new(1, -25, 1, 0),
-				Position = UDim2.new(0, 10, 0, 1),
+				Position = UDim2.new(0, 10, 0, 0),
 				Font = Enum.Font.GothamBold,
 				Name = "Title"
 			}), "TextDark"),
