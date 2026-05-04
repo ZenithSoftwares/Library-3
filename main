@@ -453,6 +453,7 @@ function OrionLib:MakeWindow(WindowConfig)
 	local Minimized = false
 	local Loaded = false
 	local UIHidden = false
+	local CurrentTabSection = nil
 
 	WindowConfig = WindowConfig or {}
 	WindowConfig.Name = WindowConfig.Name or "Orion Library"
@@ -708,6 +709,59 @@ function OrionLib:MakeWindow(WindowConfig)
 	end	
 
 	local TabFunction = {}
+
+	function TabFunction:MakeTabSection(TabSectionConfig)
+		TabSectionConfig = TabSectionConfig or {}
+		TabSectionConfig.Name = TabSectionConfig.Name or "Section"
+
+		local IsCollapsed = false
+		local SectionTabs = {}
+
+		local SectionFrame = SetChildren(SetProps(MakeElement("TFrame"), {
+			Size = UDim2.new(1, 0, 0, 24),
+			Parent = TabHolder
+		}), {
+			AddThemeObject(SetProps(MakeElement("Label", string.upper(TabSectionConfig.Name), 10), {
+				Size = UDim2.new(1, -25, 1, 0),
+				Position = UDim2.new(0, 10, 0, 0),
+				Font = Enum.Font.GothamBold,
+				Name = "Title"
+			}), "TextDark"),
+			AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072706796"), {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Size = UDim2.new(0, 12, 0, 12),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				Rotation = 180,
+				Name = "Arrow"
+			}), "TextDark")
+		})
+
+		local SectionBtn = SetProps(MakeElement("Button"), {
+			Size = UDim2.new(1, 0, 1, 0),
+			Parent = SectionFrame
+		})
+
+		AddConnection(SectionBtn.MouseEnter, function()
+			TweenService:Create(SectionFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Text}):Play()
+			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Text}):Play()
+		end)
+
+		AddConnection(SectionBtn.MouseLeave, function()
+			TweenService:Create(SectionFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = OrionLib.Themes[OrionLib.SelectedTheme].TextDark}):Play()
+			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageColor3 = OrionLib.Themes[OrionLib.SelectedTheme].TextDark}):Play()
+		end)
+
+		AddConnection(SectionBtn.MouseButton1Click, function()
+			IsCollapsed = not IsCollapsed
+			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Rotation = IsCollapsed and 0 or 180}):Play()
+			for _, Tab in ipairs(SectionTabs) do
+				Tab.Visible = not IsCollapsed
+			end
+		end)
+
+		CurrentTabSection = SectionTabs
+	end
+
 	function TabFunction:MakeTab(TabConfig)
 		TabConfig = TabConfig or {}
 		TabConfig.Name = TabConfig.Name or "Tab"
@@ -733,6 +787,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				Name = "Title"
 			}), "Text")
 		})
+
+		if CurrentTabSection then
+			table.insert(CurrentTabSection, TabFrame)
+		end
 
 		if GetIcon(TabConfig.Icon) ~= nil then
 			TabFrame.Ico.Image = GetIcon(TabConfig.Icon)
