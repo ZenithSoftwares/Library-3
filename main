@@ -234,6 +234,8 @@ local function SaveCfg(Name)
 			if Flag.Save then
 				if Flag.Type == "Colorpicker" then
 					Data[FlagName] = PackColor(Flag.Value)
+				elseif Flag.Type == "Bind" then
+					Data[FlagName] = tostring(Flag.Value)
 				else
 					Data[FlagName] = Flag.Value
 				end
@@ -1004,10 +1006,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				ToggleConfig.Default = ToggleConfig.Default or false
 				ToggleConfig.Callback = ToggleConfig.Callback or function() end
 				ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(255, 105, 180)
-				ToggleConfig.Flag = ToggleConfig.Flag or nil
-				ToggleConfig.Save = ToggleConfig.Save or false
+				ToggleConfig.Save = (ToggleConfig.Save ~= nil and ToggleConfig.Save) or (ToggleConfig.Flag ~= nil)
+				ToggleConfig.Type = "Toggle"
 
-				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save}
+				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save, Type = "Toggle"}
 
 				local Click = SetProps(MakeElement("Button"), {
 					Size = UDim2.new(1, 0, 1, 0)
@@ -1067,8 +1069,10 @@ function OrionLib:MakeWindow(WindowConfig)
 
 				AddConnection(Click.MouseButton1Up, function()
 					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
-					SaveCfg(game.GameId)
 					Toggle:Set(not Toggle.Value)
+					if OrionLib.SaveCfg then
+						SaveCfg(game.GameId)
+					end
 				end)
 
 				AddConnection(Click.MouseButton1Down, function()
@@ -1090,10 +1094,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				SliderConfig.Callback = SliderConfig.Callback or function() end
 				SliderConfig.ValueName = SliderConfig.ValueName or ""
 				SliderConfig.Color = SliderConfig.Color or Color3.fromRGB(9, 149, 98)
-				SliderConfig.Flag = SliderConfig.Flag or nil
-				SliderConfig.Save = SliderConfig.Save or false
+				SliderConfig.Save = (SliderConfig.Save ~= nil and SliderConfig.Save) or (SliderConfig.Flag ~= nil)
+				SliderConfig.Type = "Slider"
 
-				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save}
+				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save, Type = "Slider"}
 				local Dragging = false
 
 				local SliderDrag = SetChildren(SetProps(MakeElement("RoundFrame", SliderConfig.Color, 0, 5), {
@@ -1186,8 +1190,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				DropdownConfig.Options = DropdownConfig.Options or {}
 				DropdownConfig.Default = DropdownConfig.Default or ""
 				DropdownConfig.Callback = DropdownConfig.Callback or function() end
-				DropdownConfig.Flag = DropdownConfig.Flag or nil
-				DropdownConfig.Save = DropdownConfig.Save or false
+				DropdownConfig.Save = (DropdownConfig.Save ~= nil and DropdownConfig.Save) or (DropdownConfig.Flag ~= nil)
+				DropdownConfig.Type = "Dropdown"
 
 				local Dropdown = {Value = DropdownConfig.Default, Options = DropdownConfig.Options, Buttons = {}, Toggled = false, Type = "Dropdown", Save = DropdownConfig.Save}
 				local MaxElements = 5
@@ -1340,10 +1344,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				BindConfig.Default = BindConfig.Default or Enum.KeyCode.Unknown
 				BindConfig.Hold = BindConfig.Hold or false
 				BindConfig.Callback = BindConfig.Callback or function() end
-				BindConfig.Flag = BindConfig.Flag or nil
-				BindConfig.Save = BindConfig.Save or false
+				BindConfig.Save = (BindConfig.Save ~= nil and BindConfig.Save) or (BindConfig.Flag ~= nil)
+				BindConfig.Type = "Bind"
 
-				local Bind = {Value, Binding = false, Type = "Bind", Save = BindConfig.Save}
+				local Bind = {Value = BindConfig.Default, Binding = false, Type = "Bind", Save = BindConfig.Save}
 				local Holding = false
 
 				local Click = SetProps(MakeElement("Button"), {
@@ -1462,6 +1466,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				TextboxConfig.Default = TextboxConfig.Default or ""
 				TextboxConfig.TextDisappear = TextboxConfig.TextDisappear or false
 				TextboxConfig.Callback = TextboxConfig.Callback or function() end
+				TextboxConfig.Save = (TextboxConfig.Save ~= nil and TextboxConfig.Save) or (TextboxConfig.Flag ~= nil)
+				TextboxConfig.Type = "Textbox"
+
+				local Textbox = {Value = TextboxConfig.Default, Type = "Textbox", Save = TextboxConfig.Save}
 
 				local Click = SetProps(MakeElement("Button"), {
 					Size = UDim2.new(1, 0, 1, 0)
@@ -1538,8 +1546,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				ColorpickerConfig.Name = ColorpickerConfig.Name or "Colorpicker"
 				ColorpickerConfig.Default = ColorpickerConfig.Default or Color3.fromRGB(255,255,255)
 				ColorpickerConfig.Callback = ColorpickerConfig.Callback or function() end
-				ColorpickerConfig.Flag = ColorpickerConfig.Flag or nil
-				ColorpickerConfig.Save = ColorpickerConfig.Save or false
+				ColorpickerConfig.Save = (ColorpickerConfig.Save ~= nil and ColorpickerConfig.Save) or (ColorpickerConfig.Flag ~= nil)
+				ColorpickerConfig.Type = "Colorpicker"
 
 				local ColorH, ColorS, ColorV = 1, 1, 1
 				local Colorpicker = {Value = ColorpickerConfig.Default, Toggled = false, Type = "Colorpicker", Save = ColorpickerConfig.Save}
