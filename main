@@ -205,33 +205,78 @@ local function UnpackColor(Color)
 	return Color3.fromRGB(Color.R, Color.G, Color.B)
 end
 
-local function LoadCfg(Config)
-	local Data = HttpService:JSONDecode(Config)
-	table.foreach(Data, function(a,b)
-		if OrionLib.Flags[a] then
-			spawn(function() 
-				if OrionLib.Flags[a].Type == "Colorpicker" then
-					OrionLib.Flags[a]:Set(UnpackColor(b))
+local function GetConfigPath(Name)
+	return OrionLib.Folder .. "/" .. Name .. ".json"
+end
+
+local function LoadCfg(ConfigData)
+	local Success, Data = pcall(function() return HttpService:JSONDecode(ConfigData) end)
+	if not Success then return end
+	
+	for FlagName, Value in pairs(Data) do
+		if OrionLib.Flags[FlagName] then
+			task.spawn(pcall, function()
+				if OrionLib.Flags[FlagName].Type == "Colorpicker" then
+					OrionLib.Flags[FlagName]:Set(UnpackColor(Value))
 				else
-					OrionLib.Flags[a]:Set(b)
-				end    
+					OrionLib.Flags[FlagName]:Set(Value)
+				end
 			end)
 		end
-	end)
+	end
 end
 
 local function SaveCfg(Name)
-	local Data = {}
-	for i,v in pairs(OrionLib.Flags) do
-		if v.Save then
-			if v.Type == "Colorpicker" then
-				Data[i] = PackColor(v.Value)
-			else
-				Data[i] = v.Value
+	if not OrionLib.Folder then return end
+	pcall(function()
+		local Data = {}
+		for FlagName, Flag in pairs(OrionLib.Flags) do
+			if Flag.Save then
+				if Flag.Type == "Colorpicker" then
+					Data[FlagName] = PackColor(Flag.Value)
+				else
+					Data[FlagName] = Flag.Value
+				end
 			end
-		end	
+		end
+		if not isfolder(OrionLib.Folder) then
+			makefolder(OrionLib.Folder)
+		end
+		writefile(GetConfigPath(Name), HttpService:JSONEncode(Data))
+	end)
+end
+
+function OrionLib:SaveConfig(Name)
+	SaveCfg(Name)
+end
+
+function OrionLib:LoadConfig(Name)
+	local Path = GetConfigPath(Name)
+	if isfile(Path) then
+		LoadCfg(readfile(Path))
 	end
-	writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
+end
+
+function OrionLib:GetConfigs()
+	if not isfolder(OrionLib.Folder) then return {} end
+	local Configs = {}
+	local Success, Files = pcall(listfiles, OrionLib.Folder)
+	if Success then
+		for _, File in ipairs(Files) do
+			local Name = File:match("([^/\\]+)%.json$")
+			if Name then
+				table.insert(Configs, Name)
+			end
+		end
+	end
+	return Configs
+end
+
+function OrionLib:DeleteConfig(Name)
+	local Path = GetConfigPath(Name)
+	if isfile(Path) then
+		pcall(delfile, Path)
+	end
 end
 
 local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
@@ -1768,6 +1813,97 @@ function OrionLib:MakeWindow(WindowConfig)
 
 	TabFunction.MakeTab = TabFunction.Tab
 	TabFunction.MakeTabSection = TabFunction.TabSection
+
+	function TabFunction:AddConfigTab(DefaultName)
+		local ConfigTab = self:Tab({
+			Name = "Configs",
+			Icon = "rbxassetid://7072717697"
+		})
+
+		local ConfigName = DefaultName or "Default"
+		
+		local SettingsSection = ConfigTab:AddSection({Name = "Settings"})
+
+		SettingsSection:AddToggle({
+			Name = "Auto Save",
+			Default = OrionLib.SaveCfg,
+			Callback = function(Value)
+				OrionLib.SaveCfg = Value
+			end
+		})
+
+		local ManageSection = ConfigTab:AddSection({Name = "Manage Configs"})
+
+		local NameInput = ManageSection:AddTextbox({
+			Name = "Config Name",
+			Default = ConfigName,
+			Callback = function(Value)
+				ConfigName = Value
+			end
+		})
+
+		local ConfigList
+
+		ManageSection:AddButton({
+			Name = "Save Config",
+			Callback = function()
+				OrionLib:SaveConfig(ConfigName)
+				OrionLib:MakeNotification({
+					Name = "Configs",
+					Content = "Saved config: " .. ConfigName,
+					Time = 3
+				})
+				if ConfigList then
+					ConfigList:Refresh(OrionLib:GetConfigs(), true)
+				end
+			end
+		})
+
+		ConfigList = ManageSection:AddDropdown({
+			Name = "Existing Configs",
+			Options = OrionLib:GetConfigs(),
+			Callback = function(Value)
+				ConfigName = Value
+				-- Wir können das Textfeld hier nicht einfach von außen setzen ohne :Set Methode
+			end
+		})
+
+		ManageSection:AddButton({
+			Name = "Load Config",
+			Callback = function()
+				OrionLib:LoadConfig(ConfigName)
+				OrionLib:MakeNotification({
+					Name = "Configs",
+					Content = "Loaded config: " .. ConfigName,
+					Time = 3
+				})
+			end
+		})
+
+		ManageSection:AddButton({
+			Name = "Delete Config",
+			Callback = function()
+				OrionLib:DeleteConfig(ConfigName)
+				OrionLib:MakeNotification({
+					Name = "Configs",
+					Content = "Deleted config: " .. ConfigName,
+					Time = 3
+				})
+				if ConfigList then
+					ConfigList:Refresh(OrionLib:GetConfigs(), true)
+				end
+			end
+		})
+
+		ManageSection:AddButton({
+			Name = "Refresh List",
+			Callback = function()
+				if ConfigList then
+					ConfigList:Refresh(OrionLib:GetConfigs(), true)
+				end
+			end
+		})
+	end
 
 	return TabFunction
 end   
