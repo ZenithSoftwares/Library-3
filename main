@@ -1766,6 +1766,9 @@ function OrionLib:MakeWindow(WindowConfig)
 		return ElementFunction   
 	end 
 
+	TabFunction.MakeTab = TabFunction.Tab
+	TabFunction.MakeTabSection = TabFunction.TabSection
+
 	return TabFunction
 end   
 
