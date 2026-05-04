@@ -1847,17 +1847,21 @@ function OrionLib:MakeWindow(WindowConfig)
 				}), "Text")
 			})
 		end
-		return ElementFunction   
-	end 
+		ElementFunction.Select = Tab.Select
+
+		return ElementFunction, TabFrame
+	end
 
 	TabFunction.MakeTab = TabFunction.Tab
 	TabFunction.MakeTabSection = TabFunction.TabSection
 
 	function TabFunction:AddConfigTab(DefaultName)
-		local ConfigTab = self:Tab({
+		local ConfigTab, ConfigTabFrame = self:Tab({
 			Name = "Configs",
 			Icon = "rbxassetid://7072717697"
 		})
+
+		ConfigTabFrame.Visible = false
 
 		local ConfigName = DefaultName or "Default"
 		
