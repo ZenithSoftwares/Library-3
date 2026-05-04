@@ -715,23 +715,15 @@ function OrionLib:MakeWindow(WindowConfig)
 	end)
 
 	AddConnection(CollapseBtn.MouseButton1Click, function()
-		if Minimized then
-			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 615, 0, 344)}):Play()
-			CollapseBtn.Ico.Image = "rbxassetid://7072719338"
-			wait(.02)
-			MainWindow.ClipsDescendants = false
-			WindowStuff.Visible = true
-			WindowTopBarLine.Visible = true
+		if OrionLib.ConfigTab then
+			OrionLib.ConfigTab:Select()
 		else
-			MainWindow.ClipsDescendants = true
-			WindowTopBarLine.Visible = false
-			CollapseBtn.Ico.Image = "rbxassetid://7072720870"
-
-			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, WindowName.TextBounds.X + 140, 0, 50)}):Play()
-			wait(0.1)
-			WindowStuff.Visible = false	
+			OrionLib:MakeNotification({
+				Name = "Error",
+				Content = "Config Tab not found! Make sure to call AddConfigTab().",
+				Time = 3
+			})
 		end
-		Minimized = not Minimized    
 	end)
 
 	AddConnection(HideBtn.MouseButton1Click, function()
@@ -747,6 +739,10 @@ function OrionLib:MakeWindow(WindowConfig)
 	AddConnection(CloseBtn.MouseButton1Click, function()
 		OrionLib:Destroy()
 	end)
+
+	-- Wiederherstellung der ursprünglichen Minimize-Funktion (Optional: Falls du sie noch willst, 
+	-- könnte man sie auf einen Hotkey legen oder einen anderen Button nutzen. 
+	-- Aber laut deiner Anweisung soll der Pfeil ja ein "Tab" sein.)
 
 	local function LoadSequence()
 		MainWindow.Visible = false
@@ -895,7 +891,8 @@ function OrionLib:MakeWindow(WindowConfig)
 			Container.Visible = true
 		end    
 
-		AddConnection(TabFrame.MouseButton1Click, function()
+		local Tab = {}
+		function Tab:Select()
 			for _, Tab in next, TabHolder:GetChildren() do
 				if Tab:IsA("TextButton") then
 					Tab.Title.Font = Enum.Font.GothamSemibold
@@ -911,7 +908,11 @@ function OrionLib:MakeWindow(WindowConfig)
 			TweenService:Create(TabFrame.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0}):Play()
 			TweenService:Create(TabFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TabFrame.Title.Font = Enum.Font.GothamBlack
-			Container.Visible = true   
+			Container.Visible = true
+		end
+
+		AddConnection(TabFrame.MouseButton1Click, function()
+			Tab:Select()
 		end)
 
 		local function GetElements(ItemParent)
@@ -1941,6 +1942,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				end
 			end
 		})
+
+		OrionLib.ConfigTab = ConfigTab
 	end
 
 	return TabFunction
