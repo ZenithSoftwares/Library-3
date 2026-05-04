@@ -536,24 +536,53 @@ function OrionLib:MakeWindow(WindowConfig)
 	end)
 
 	local CloseBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.5, 0, 1, 0),
-		Position = UDim2.new(0.5, 0, 0, 0),
+		Size = UDim2.new(0, 30, 1, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072725342"), {
-			Position = UDim2.new(0, 9, 0, 6),
+			Position = UDim2.new(0, 6, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18)
 		}), "Text")
 	})
 
 	local MinimizeBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.new(0, 30, 1, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719338"), {
-			Position = UDim2.new(0, 9, 0, 6),
+			Position = UDim2.new(0, 6, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18),
 			Name = "Ico"
+		}), "Text")
+	})
+
+	local CloudBtn = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(0, 30, 1, 0),
+		BackgroundTransparency = 1
+	}), {
+		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072722108"), {
+			Position = UDim2.new(0, 6, 0, 6),
+			Size = UDim2.new(0, 18, 0, 18)
+		}), "Text")
+	})
+
+	local ResetBtn = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(0, 30, 1, 0),
+		BackgroundTransparency = 1
+	}), {
+		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072721013"), {
+			Position = UDim2.new(0, 6, 0, 6),
+			Size = UDim2.new(0, 18, 0, 18)
+		}), "Text")
+	})
+
+	local CreateBtn = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(0, 30, 1, 0),
+		BackgroundTransparency = 1
+	}), {
+		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072721200"), {
+			Position = UDim2.new(0, 6, 0, 6),
+			Size = UDim2.new(0, 18, 0, 18)
 		}), "Text")
 	})
 
@@ -654,16 +683,20 @@ function OrionLib:MakeWindow(WindowConfig)
 			WindowName,
 			WindowTopBarLine,
 			AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 7), {
-				Size = UDim2.new(0, 70, 0, 30),
-				Position = UDim2.new(1, -90, 0, 10)
+				Size = UDim2.new(0, 154, 0, 30),
+				Position = UDim2.new(1, -174, 0, 10)
 			}), {
 				AddThemeObject(MakeElement("Stroke"), "Stroke"),
-				AddThemeObject(SetProps(MakeElement("Frame"), {
-					Size = UDim2.new(0, 1, 1, 0),
-					Position = UDim2.new(0.5, 0, 0, 0)
-				}), "Stroke"), 
-				CloseBtn,
-				MinimizeBtn
+				MakeElement("List", 0, 0, Enum.FillDirection.Horizontal),
+				CloudBtn,
+				AddThemeObject(SetProps(MakeElement("Frame"), { Size = UDim2.new(0, 1, 1, 0) }), "Stroke"),
+				ResetBtn,
+				AddThemeObject(SetProps(MakeElement("Frame"), { Size = UDim2.new(0, 1, 1, 0) }), "Stroke"),
+				CreateBtn,
+				AddThemeObject(SetProps(MakeElement("Frame"), { Size = UDim2.new(0, 1, 1, 0) }), "Stroke"),
+				MinimizeBtn,
+				AddThemeObject(SetProps(MakeElement("Frame"), { Size = UDim2.new(0, 1, 1, 0) }), "Stroke"),
+				CloseBtn
 			}), "Second"), 
 		}),
 		DragPoint,
@@ -716,6 +749,32 @@ function OrionLib:MakeWindow(WindowConfig)
 			WindowStuff.Visible = false	
 		end
 		Minimized = not Minimized    
+	end)
+
+	AddConnection(CloudBtn.MouseButton1Up, function()
+		OrionLib:LoadConfig(game.GameId)
+		OrionLib:MakeNotification({
+			Name = "Configuration",
+			Content = "Cloud config loaded.",
+			Time = 3
+		})
+	end)
+
+	AddConnection(ResetBtn.MouseButton1Up, function()
+		OrionLib:MakeNotification({
+			Name = "Configuration",
+			Content = "Settings reset (visual only).",
+			Time = 3
+		})
+	end)
+
+	AddConnection(CreateBtn.MouseButton1Up, function()
+		OrionLib:SaveConfig(game.GameId)
+		OrionLib:MakeNotification({
+			Name = "Configuration",
+			Content = "Config created and saved.",
+			Time = 3
+		})
 	end)
 
 	local function LoadSequence()
