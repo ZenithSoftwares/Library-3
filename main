@@ -536,33 +536,22 @@ function OrionLib:MakeWindow(WindowConfig)
 	end)
 
 	local CloseBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-		Position = UDim2.new(0.66, 0, 0, 0),
+		Size = UDim2.new(0.5, 0, 1, 0),
+		Position = UDim2.new(0.5, 0, 0, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072725342"), {
-			Position = UDim2.new(0, 5, 0, 6),
+			Position = UDim2.new(0, 9, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18)
 		}), "Text")
 	})
 
-	local HideBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-		Position = UDim2.new(0.33, 0, 0, 0),
-		BackgroundTransparency = 1
-	}), {
-		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719545"), {
-			Position = UDim2.new(0, 5, 0, 6),
-			Size = UDim2.new(0, 18, 0, 18)
-		}), "Text")
-	})
-
-	local CollapseBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
+	local MinimizeBtn = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(0.5, 0, 1, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719338"), {
-			Position = UDim2.new(0, 5, 0, 6),
+			Position = UDim2.new(0, 9, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18),
 			Name = "Ico"
 		}), "Text")
@@ -665,21 +654,16 @@ function OrionLib:MakeWindow(WindowConfig)
 			WindowName,
 			WindowTopBarLine,
 			AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 7), {
-				Size = UDim2.new(0, 105, 0, 30),
-				Position = UDim2.new(1, -125, 0, 10)
+				Size = UDim2.new(0, 70, 0, 30),
+				Position = UDim2.new(1, -90, 0, 10)
 			}), {
 				AddThemeObject(MakeElement("Stroke"), "Stroke"),
 				AddThemeObject(SetProps(MakeElement("Frame"), {
 					Size = UDim2.new(0, 1, 1, 0),
-					Position = UDim2.new(0.33, 0, 0, 0)
+					Position = UDim2.new(0.5, 0, 0, 0)
 				}), "Stroke"), 
-				AddThemeObject(SetProps(MakeElement("Frame"), {
-					Size = UDim2.new(0, 1, 1, 0),
-					Position = UDim2.new(0.66, 0, 0, 0)
-				}), "Stroke"), 
-				CollapseBtn,
-				HideBtn,
-				CloseBtn
+				CloseBtn,
+				MinimizeBtn
 			}), "Second"), 
 		}),
 		DragPoint,
@@ -714,35 +698,25 @@ function OrionLib:MakeWindow(WindowConfig)
 		end
 	end)
 
-	AddConnection(CollapseBtn.MouseButton1Click, function()
-		if OrionLib.ConfigTab then
-			OrionLib.ConfigTab:Select()
+	AddConnection(MinimizeBtn.MouseButton1Up, function()
+		if Minimized then
+			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 615, 0, 344)}):Play()
+			MinimizeBtn.Ico.Image = "rbxassetid://7072719338"
+			wait(.02)
+			MainWindow.ClipsDescendants = false
+			WindowStuff.Visible = true
+			WindowTopBarLine.Visible = true
 		else
-			OrionLib:MakeNotification({
-				Name = "Error",
-				Content = "Config Tab not found! Make sure to call AddConfigTab().",
-				Time = 3
-			})
+			MainWindow.ClipsDescendants = true
+			WindowTopBarLine.Visible = false
+			MinimizeBtn.Ico.Image = "rbxassetid://7072720870"
+
+			TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, WindowName.TextBounds.X + 140, 0, 50)}):Play()
+			wait(0.1)
+			WindowStuff.Visible = false	
 		end
+		Minimized = not Minimized    
 	end)
-
-	AddConnection(HideBtn.MouseButton1Click, function()
-		MainWindow.Visible = false
-		UIHidden = true
-		OrionLib:MakeNotification({
-			Name = "Interface Hidden",
-			Content = "Tap RightShift to reopen the interface",
-			Time = 5
-		})
-	end)
-
-	AddConnection(CloseBtn.MouseButton1Click, function()
-		OrionLib:Destroy()
-	end)
-
-	-- Wiederherstellung der ursprünglichen Minimize-Funktion (Optional: Falls du sie noch willst, 
-	-- könnte man sie auf einen Hotkey legen oder einen anderen Button nutzen. 
-	-- Aber laut deiner Anweisung soll der Pfeil ja ein "Tab" sein.)
 
 	local function LoadSequence()
 		MainWindow.Visible = false
@@ -891,8 +865,7 @@ function OrionLib:MakeWindow(WindowConfig)
 			Container.Visible = true
 		end    
 
-		local Tab = {}
-		function Tab:Select()
+		AddConnection(TabFrame.MouseButton1Click, function()
 			for _, Tab in next, TabHolder:GetChildren() do
 				if Tab:IsA("TextButton") then
 					Tab.Title.Font = Enum.Font.GothamSemibold
@@ -908,11 +881,7 @@ function OrionLib:MakeWindow(WindowConfig)
 			TweenService:Create(TabFrame.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0}):Play()
 			TweenService:Create(TabFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TabFrame.Title.Font = Enum.Font.GothamBlack
-			Container.Visible = true
-		end
-
-		AddConnection(TabFrame.MouseButton1Click, function()
-			Tab:Select()
+			Container.Visible = true   
 		end)
 
 		local function GetElements(ItemParent)
@@ -1847,21 +1816,17 @@ function OrionLib:MakeWindow(WindowConfig)
 				}), "Text")
 			})
 		end
-		ElementFunction.Select = Tab.Select
-
-		return ElementFunction, TabFrame
-	end
+		return ElementFunction   
+	end 
 
 	TabFunction.MakeTab = TabFunction.Tab
 	TabFunction.MakeTabSection = TabFunction.TabSection
 
 	function TabFunction:AddConfigTab(DefaultName)
-		local ConfigTab, ConfigTabFrame = self:Tab({
+		local ConfigTab = self:Tab({
 			Name = "Configs",
 			Icon = "rbxassetid://7072717697"
 		})
-
-		ConfigTabFrame.Visible = false
 
 		local ConfigName = DefaultName or "Default"
 		
@@ -1946,8 +1911,6 @@ function OrionLib:MakeWindow(WindowConfig)
 				end
 			end
 		})
-
-		OrionLib.ConfigTab = ConfigTab
 	end
 
 	return TabFunction
