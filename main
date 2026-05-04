@@ -467,7 +467,6 @@ function OrionLib:MakeWindow(WindowConfig)
 	WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
 	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://8834748103"
 	WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://8834748103"
-    WindowConfig.ConfigCallback = WindowConfig.ConfigCallback or function() end
 	OrionLib.Folder = WindowConfig.ConfigFolder
 	OrionLib.SaveCfg = WindowConfig.SaveConfig
 
@@ -489,36 +488,24 @@ function OrionLib:MakeWindow(WindowConfig)
 	end)
 
 	local CloseBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-		Position = UDim2.new(0.66, 0, 0, 0),
+		Size = UDim2.new(0.5, 0, 1, 0),
+		Position = UDim2.new(0.5, 0, 0, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072725342"), {
-			Position = UDim2.new(0, 3, 0, 6),
+			Position = UDim2.new(0, 9, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18)
 		}), "Text")
 	})
 
 	local MinimizeBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-        Position = UDim2.new(0.33, 0, 0, 0),
+		Size = UDim2.new(0.5, 0, 1, 0),
 		BackgroundTransparency = 1
 	}), {
 		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719338"), {
-			Position = UDim2.new(0, 3, 0, 6),
+			Position = UDim2.new(0, 9, 0, 6),
 			Size = UDim2.new(0, 18, 0, 18),
 			Name = "Ico"
-		}), "Text")
-	})
-
-    local ConfigBtn = SetChildren(SetProps(MakeElement("Button"), {
-		Size = UDim2.new(0.33, 0, 1, 0),
-        Position = UDim2.new(0, 0, 0, 0),
-		BackgroundTransparency = 1
-	}), {
-		AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072720023"), {
-			Position = UDim2.new(0, 3, 0, 6),
-			Size = UDim2.new(0, 18, 0, 18)
 		}), "Text")
 	})
 
@@ -619,13 +606,16 @@ function OrionLib:MakeWindow(WindowConfig)
 			WindowName,
 			WindowTopBarLine,
 			AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 7), {
-				Size = UDim2.new(0, 75, 0, 30),
-				Position = UDim2.new(1, -95, 0, 10)
+				Size = UDim2.new(0, 70, 0, 30),
+				Position = UDim2.new(1, -90, 0, 10)
 			}), {
 				AddThemeObject(MakeElement("Stroke"), "Stroke"),
-				ConfigBtn,
-				MinimizeBtn,
-                CloseBtn
+				AddThemeObject(SetProps(MakeElement("Frame"), {
+					Size = UDim2.new(0, 1, 1, 0),
+					Position = UDim2.new(0.5, 0, 0, 0)
+				}), "Stroke"), 
+				CloseBtn,
+				MinimizeBtn
 			}), "Second"), 
 		}),
 		DragPoint,
@@ -652,10 +642,6 @@ function OrionLib:MakeWindow(WindowConfig)
 			Time = 5
 		})
 		WindowConfig.CloseCallback()
-	end)
-
-    AddConnection(ConfigBtn.MouseButton1Up, function()
-		WindowConfig.ConfigCallback()
 	end)
 
 	AddConnection(UserInputService.InputBegan, function(Input)
@@ -722,23 +708,6 @@ function OrionLib:MakeWindow(WindowConfig)
 	end	
 
 	local TabFunction = {}
-
-    function TabFunction:MakeCategory(Name)
-        local CategoryLabel = SetProps(MakeElement("Label", Name:upper(), 8), {
-            Size = UDim2.new(1, -12, 0, 20),
-            Position = UDim2.new(0, 12, 0, 0),
-            Font = Enum.Font.GothamBold,
-            Parent = TabHolder,
-            TextColor3 = Color3.fromRGB(255, 105, 180),
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        local CategoryFunction = {}
-        function CategoryFunction:MakeTab(TabConfig)
-            return TabFunction:MakeTab(TabConfig)
-        end
-        return CategoryFunction
-    end
-
 	function TabFunction:MakeTab(TabConfig)
 		TabConfig = TabConfig or {}
 		TabConfig.Name = TabConfig.Name or "Tab"
@@ -813,50 +782,6 @@ function OrionLib:MakeWindow(WindowConfig)
 
 		local function GetElements(ItemParent)
 			local ElementFunction = {}
-
-            function ElementFunction:AddActiveConfig(ConfigName, SaveCallback)
-                local ActiveConfigFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 6), { Size = UDim2.new(1, 0, 0, 45), Parent = ItemParent }), {
-                    AddThemeObject(MakeElement("Stroke"), "Stroke"),
-                    SetProps(MakeElement("Label", "Config: ", 14), { Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 15, 0, 0), Font = Enum.Font.GothamBold, AutomaticSize = Enum.AutomaticSize.X }),
-                    SetProps(MakeElement("Label", ConfigName, 14), { Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 70, 0, 0), Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 105, 180), AutomaticSize = Enum.AutomaticSize.X }),
-                    SetChildren(SetProps(MakeElement("Button"), { Size = UDim2.new(0, 60, 0, 25), Position = UDim2.new(1, -75, 0.5, -12), BackgroundColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Second, BackgroundTransparency = 0 }, { MakeElement("Corner", 0, 4), AddThemeObject(MakeElement("Stroke"), "Stroke") }), {
-                        SetProps(MakeElement("Label", "Save", 12), { Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center })
-                    })
-                }), "Second")
-                AddConnection(ActiveConfigFrame.TextButton.MouseButton1Click, SaveCallback)
-            end
-
-            function ElementFunction:AddNewConfig(CreateCallback)
-                local NewConfigFrame = SetChildren(SetProps(MakeElement("TFrame"), { Size = UDim2.new(1, 0, 0, 40), Parent = ItemParent }), {
-                    SetProps(MakeElement("List"), { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8) }),
-                    AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 6), { Size = UDim2.new(1, -4, 1, 0) }), {
-                        AddThemeObject(MakeElement("Stroke"), "Stroke"),
-                        Create("TextBox", { Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 12, 0, 0), PlaceholderText = "Config name...", Text = "", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left }),
-                        SetChildren(SetProps(MakeElement("Button"), { Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -75, 0.5, -12) }), {
-                            SetProps(MakeElement("Label", "+ Create", 12), { Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right })
-                        })
-                    }), "Second")
-                })
-                AddConnection(NewConfigFrame.Frame.TextButton.MouseButton1Click, function() CreateCallback(NewConfigFrame.Frame.TextBox.Text) end)
-            end
-
-            function ElementFunction:AddConfigList(Configs, LoadCallback, DeleteCallback)
-                for _, name in pairs(Configs) do
-                    local ConfigItem = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 6), { Size = UDim2.new(1, 0, 0, 40), Parent = ItemParent }), {
-                        AddThemeObject(MakeElement("Stroke"), "Stroke"),
-                        SetProps(MakeElement("Label", tostring(name), 13), { Size = UDim2.new(1, -120, 1, 0), Position = UDim2.new(0, 12, 0, 0), Font = Enum.Font.GothamBold }),
-                        SetChildren(SetProps(MakeElement("Button"), { Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(1, -75, 0.5, -8), Name = "DeleteBtn" }), {
-                            SetProps(MakeElement("Image", "rbxassetid://7072719602"), { Size = UDim2.new(1, 0, 1, 0), ImageColor3 = Color3.fromRGB(255, 100, 100) })
-                        }),
-                        SetChildren(SetProps(MakeElement("Button"), { Size = UDim2.new(0, 50, 0, 24), Position = UDim2.new(1, -55, 0.5, -12), Name = "LoadBtn" }), {
-                            SetProps(MakeElement("Label", "Load", 12), { Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Right })
-                        })
-                    }), "Second")
-                    AddConnection(ConfigItem.LoadBtn.MouseButton1Click, function() LoadCallback(name) end)
-                    AddConnection(ConfigItem.DeleteBtn.MouseButton1Click, function() DeleteCallback(name) ConfigItem:Destroy() end)
-                end
-            end
-
 			function ElementFunction:AddLabel(Text)
 				local LabelFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 30),
