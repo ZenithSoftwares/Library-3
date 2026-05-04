@@ -710,9 +710,8 @@ function OrionLib:MakeWindow(WindowConfig)
 
 	local TabFunction = {}
 
-	function TabFunction:MakeTabSection(TabSectionConfig)
-		TabSectionConfig = TabSectionConfig or {}
-		TabSectionConfig.Name = TabSectionConfig.Name or "Section"
+	function TabFunction:TabSection(Name)
+		local TabSectionConfig = {Name = Name or "Section"}
 
 		local IsCollapsed = false
 		local SectionTabs = {}
@@ -762,7 +761,7 @@ function OrionLib:MakeWindow(WindowConfig)
 		CurrentTabSection = SectionTabs
 	end
 
-	function TabFunction:MakeTab(TabConfig)
+	function TabFunction:Tab(TabConfig)
 		TabConfig = TabConfig or {}
 		TabConfig.Name = TabConfig.Name or "Tab"
 		TabConfig.Icon = TabConfig.Icon or ""
