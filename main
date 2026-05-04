@@ -724,8 +724,9 @@ function OrionLib:MakeWindow(WindowConfig)
 	local TabFunction = {}
 
     function TabFunction:MakeCategory(Name)
-        local CategoryLabel = SetProps(MakeElement("Label", Name:upper(), 10), {
-            Size = UDim2.new(1, 0, 0, 25),
+        local CategoryLabel = SetProps(MakeElement("Label", Name:upper(), 15), {
+            Size = UDim2.new(1, -12, 0, 30),
+            Position = UDim2.new(0, 12, 0, 0),
             Font = Enum.Font.GothamBold,
             Parent = TabHolder,
             TextColor3 = Color3.fromRGB(255, 105, 180),
