@@ -205,80 +205,33 @@ local function UnpackColor(Color)
 	return Color3.fromRGB(Color.R, Color.G, Color.B)
 end
 
-local function GetConfigPath(Name)
-	return OrionLib.Folder .. "/" .. Name .. ".json"
-end
-
-local function LoadCfg(ConfigData)
-	local Success, Data = pcall(function() return HttpService:JSONDecode(ConfigData) end)
-	if not Success then return end
-	
-	for FlagName, Value in pairs(Data) do
-		if OrionLib.Flags[FlagName] then
-			task.spawn(pcall, function()
-				if OrionLib.Flags[FlagName].Type == "Colorpicker" then
-					OrionLib.Flags[FlagName]:Set(UnpackColor(Value))
+local function LoadCfg(Config)
+	local Data = HttpService:JSONDecode(Config)
+	table.foreach(Data, function(a,b)
+		if OrionLib.Flags[a] then
+			spawn(function() 
+				if OrionLib.Flags[a].Type == "Colorpicker" then
+					OrionLib.Flags[a]:Set(UnpackColor(b))
 				else
-					OrionLib.Flags[FlagName]:Set(Value)
-				end
+					OrionLib.Flags[a]:Set(b)
+				end    
 			end)
 		end
-	end
-end
-
-local function SaveCfg(Name)
-	if not OrionLib.Folder then return end
-	pcall(function()
-		local Data = {}
-		for FlagName, Flag in pairs(OrionLib.Flags) do
-			if Flag.Save then
-				if Flag.Type == "Colorpicker" then
-					Data[FlagName] = PackColor(Flag.Value)
-				elseif Flag.Type == "Bind" then
-					Data[FlagName] = tostring(Flag.Value)
-				else
-					Data[FlagName] = Flag.Value
-				end
-			end
-		end
-		if not isfolder(OrionLib.Folder) then
-			makefolder(OrionLib.Folder)
-		end
-		writefile(GetConfigPath(Name), HttpService:JSONEncode(Data))
 	end)
 end
 
-function OrionLib:SaveConfig(Name)
-	SaveCfg(Name)
-end
-
-function OrionLib:LoadConfig(Name)
-	local Path = GetConfigPath(Name)
-	if isfile(Path) then
-		LoadCfg(readfile(Path))
-	end
-end
-
-function OrionLib:GetConfigs()
-	if not isfolder(OrionLib.Folder) then return {} end
-	local Configs = {}
-	local Success, Files = pcall(listfiles, OrionLib.Folder)
-	if Success then
-		for _, File in ipairs(Files) do
-			local Name = File:match("([^/\\]+)%.json$")
-			if Name then
-				table.insert(Configs, Name)
+local function SaveCfg(Name)
+	local Data = {}
+	for i,v in pairs(OrionLib.Flags) do
+		if v.Save then
+			if v.Type == "Colorpicker" then
+				Data[i] = PackColor(v.Value)
+			else
+				Data[i] = v.Value
 			end
-		end
+		end	
 	end
-	return Configs
-end
-
-function OrionLib:DeleteConfig(Name)
-	local Path = GetConfigPath(Name)
-	if isfile(Path) then
-		pcall(delfile, Path)
-	end
+	writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
 end
 
 local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
@@ -500,7 +453,6 @@ function OrionLib:MakeWindow(WindowConfig)
 	local Minimized = false
 	local Loaded = false
 	local UIHidden = false
-	local CurrentTabSection = nil
 
 	WindowConfig = WindowConfig or {}
 	WindowConfig.Name = WindowConfig.Name or "Orion Library"
@@ -756,59 +708,7 @@ function OrionLib:MakeWindow(WindowConfig)
 	end	
 
 	local TabFunction = {}
-
-	function TabFunction:TabSection(Name)
-		local TabSectionConfig = {Name = Name or "Section"}
-
-		local IsCollapsed = false
-		local SectionTabs = {}
-
-		local SectionFrame = SetChildren(SetProps(MakeElement("TFrame"), {
-			Size = UDim2.new(1, 0, 0, 24),
-			Parent = TabHolder
-		}), {
-			AddThemeObject(SetProps(MakeElement("Label", string.upper(TabSectionConfig.Name), 10), {
-				Size = UDim2.new(1, -25, 1, 0),
-				Position = UDim2.new(0, 10, 0, 0),
-				Font = Enum.Font.GothamBold,
-				Name = "Title"
-			}), "TextDark"),
-			AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072706796"), {
-				AnchorPoint = Vector2.new(1, 0.5),
-				Size = UDim2.new(0, 12, 0, 12),
-				Position = UDim2.new(1, -12, 0.5, 0),
-				Rotation = 180,
-				Name = "Arrow"
-			}), "TextDark")
-		})
-
-		local SectionBtn = SetProps(MakeElement("Button"), {
-			Size = UDim2.new(1, 0, 1, 0),
-			Parent = SectionFrame
-		})
-
-		AddConnection(SectionBtn.MouseEnter, function()
-			TweenService:Create(SectionFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Text}):Play()
-			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageColor3 = OrionLib.Themes[OrionLib.SelectedTheme].Text}):Play()
-		end)
-
-		AddConnection(SectionBtn.MouseLeave, function()
-			TweenService:Create(SectionFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = OrionLib.Themes[OrionLib.SelectedTheme].TextDark}):Play()
-			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageColor3 = OrionLib.Themes[OrionLib.SelectedTheme].TextDark}):Play()
-		end)
-
-		AddConnection(SectionBtn.MouseButton1Click, function()
-			IsCollapsed = not IsCollapsed
-			TweenService:Create(SectionFrame.Arrow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Rotation = IsCollapsed and 0 or 180}):Play()
-			for _, Tab in ipairs(SectionTabs) do
-				Tab.Visible = not IsCollapsed
-			end
-		end)
-
-		CurrentTabSection = SectionTabs
-	end
-
-	function TabFunction:Tab(TabConfig)
+	function TabFunction:MakeTab(TabConfig)
 		TabConfig = TabConfig or {}
 		TabConfig.Name = TabConfig.Name or "Tab"
 		TabConfig.Icon = TabConfig.Icon or ""
@@ -833,10 +733,6 @@ function OrionLib:MakeWindow(WindowConfig)
 				Name = "Title"
 			}), "Text")
 		})
-
-		if CurrentTabSection then
-			table.insert(CurrentTabSection, TabFrame)
-		end
 
 		if GetIcon(TabConfig.Icon) ~= nil then
 			TabFrame.Ico.Image = GetIcon(TabConfig.Icon)
@@ -1006,10 +902,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				ToggleConfig.Default = ToggleConfig.Default or false
 				ToggleConfig.Callback = ToggleConfig.Callback or function() end
 				ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(255, 105, 180)
-				ToggleConfig.Save = (ToggleConfig.Save ~= nil and ToggleConfig.Save) or (ToggleConfig.Flag ~= nil)
-				ToggleConfig.Type = "Toggle"
+				ToggleConfig.Flag = ToggleConfig.Flag or nil
+				ToggleConfig.Save = ToggleConfig.Save or false
 
-				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save, Type = "Toggle"}
+				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save}
 
 				local Click = SetProps(MakeElement("Button"), {
 					Size = UDim2.new(1, 0, 1, 0)
@@ -1069,10 +965,8 @@ function OrionLib:MakeWindow(WindowConfig)
 
 				AddConnection(Click.MouseButton1Up, function()
 					TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(OrionLib.Themes[OrionLib.SelectedTheme].Second.R * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.G * 255 + 3, OrionLib.Themes[OrionLib.SelectedTheme].Second.B * 255 + 3)}):Play()
+					SaveCfg(game.GameId)
 					Toggle:Set(not Toggle.Value)
-					if OrionLib.SaveCfg then
-						SaveCfg(game.GameId)
-					end
 				end)
 
 				AddConnection(Click.MouseButton1Down, function()
@@ -1094,10 +988,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				SliderConfig.Callback = SliderConfig.Callback or function() end
 				SliderConfig.ValueName = SliderConfig.ValueName or ""
 				SliderConfig.Color = SliderConfig.Color or Color3.fromRGB(9, 149, 98)
-				SliderConfig.Save = (SliderConfig.Save ~= nil and SliderConfig.Save) or (SliderConfig.Flag ~= nil)
-				SliderConfig.Type = "Slider"
+				SliderConfig.Flag = SliderConfig.Flag or nil
+				SliderConfig.Save = SliderConfig.Save or false
 
-				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save, Type = "Slider"}
+				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save}
 				local Dragging = false
 
 				local SliderDrag = SetChildren(SetProps(MakeElement("RoundFrame", SliderConfig.Color, 0, 5), {
@@ -1190,8 +1084,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				DropdownConfig.Options = DropdownConfig.Options or {}
 				DropdownConfig.Default = DropdownConfig.Default or ""
 				DropdownConfig.Callback = DropdownConfig.Callback or function() end
-				DropdownConfig.Save = (DropdownConfig.Save ~= nil and DropdownConfig.Save) or (DropdownConfig.Flag ~= nil)
-				DropdownConfig.Type = "Dropdown"
+				DropdownConfig.Flag = DropdownConfig.Flag or nil
+				DropdownConfig.Save = DropdownConfig.Save or false
 
 				local Dropdown = {Value = DropdownConfig.Default, Options = DropdownConfig.Options, Buttons = {}, Toggled = false, Type = "Dropdown", Save = DropdownConfig.Save}
 				local MaxElements = 5
@@ -1344,10 +1238,10 @@ function OrionLib:MakeWindow(WindowConfig)
 				BindConfig.Default = BindConfig.Default or Enum.KeyCode.Unknown
 				BindConfig.Hold = BindConfig.Hold or false
 				BindConfig.Callback = BindConfig.Callback or function() end
-				BindConfig.Save = (BindConfig.Save ~= nil and BindConfig.Save) or (BindConfig.Flag ~= nil)
-				BindConfig.Type = "Bind"
+				BindConfig.Flag = BindConfig.Flag or nil
+				BindConfig.Save = BindConfig.Save or false
 
-				local Bind = {Value = BindConfig.Default, Binding = false, Type = "Bind", Save = BindConfig.Save}
+				local Bind = {Value, Binding = false, Type = "Bind", Save = BindConfig.Save}
 				local Holding = false
 
 				local Click = SetProps(MakeElement("Button"), {
@@ -1466,10 +1360,6 @@ function OrionLib:MakeWindow(WindowConfig)
 				TextboxConfig.Default = TextboxConfig.Default or ""
 				TextboxConfig.TextDisappear = TextboxConfig.TextDisappear or false
 				TextboxConfig.Callback = TextboxConfig.Callback or function() end
-				TextboxConfig.Save = (TextboxConfig.Save ~= nil and TextboxConfig.Save) or (TextboxConfig.Flag ~= nil)
-				TextboxConfig.Type = "Textbox"
-
-				local Textbox = {Value = TextboxConfig.Default, Type = "Textbox", Save = TextboxConfig.Save}
 
 				local Click = SetProps(MakeElement("Button"), {
 					Size = UDim2.new(1, 0, 1, 0)
@@ -1546,8 +1436,8 @@ function OrionLib:MakeWindow(WindowConfig)
 				ColorpickerConfig.Name = ColorpickerConfig.Name or "Colorpicker"
 				ColorpickerConfig.Default = ColorpickerConfig.Default or Color3.fromRGB(255,255,255)
 				ColorpickerConfig.Callback = ColorpickerConfig.Callback or function() end
-				ColorpickerConfig.Save = (ColorpickerConfig.Save ~= nil and ColorpickerConfig.Save) or (ColorpickerConfig.Flag ~= nil)
-				ColorpickerConfig.Type = "Colorpicker"
+				ColorpickerConfig.Flag = ColorpickerConfig.Flag or nil
+				ColorpickerConfig.Save = ColorpickerConfig.Save or false
 
 				local ColorH, ColorS, ColorV = 1, 1, 1
 				local Colorpicker = {Value = ColorpickerConfig.Default, Toggled = false, Type = "Colorpicker", Save = ColorpickerConfig.Save}
@@ -1818,100 +1708,6 @@ function OrionLib:MakeWindow(WindowConfig)
 		end
 		return ElementFunction   
 	end 
-
-	TabFunction.MakeTab = TabFunction.Tab
-	TabFunction.MakeTabSection = TabFunction.TabSection
-
-	function TabFunction:AddConfigTab(DefaultName)
-		local ConfigTab = self:Tab({
-			Name = "Configs",
-			Icon = "rbxassetid://7072717697"
-		})
-
-		local ConfigName = DefaultName or "Default"
-		
-		local SettingsSection = ConfigTab:AddSection({Name = "Settings"})
-
-		SettingsSection:AddToggle({
-			Name = "Auto Save",
-			Default = OrionLib.SaveCfg,
-			Callback = function(Value)
-				OrionLib.SaveCfg = Value
-			end
-		})
-
-		local ManageSection = ConfigTab:AddSection({Name = "Manage Configs"})
-
-		local NameInput = ManageSection:AddTextbox({
-			Name = "Config Name",
-			Default = ConfigName,
-			Callback = function(Value)
-				ConfigName = Value
-			end
-		})
-
-		local ConfigList
-
-		ManageSection:AddButton({
-			Name = "Save Config",
-			Callback = function()
-				OrionLib:SaveConfig(ConfigName)
-				OrionLib:MakeNotification({
-					Name = "Configs",
-					Content = "Saved config: " .. ConfigName,
-					Time = 3
-				})
-				if ConfigList then
-					ConfigList:Refresh(OrionLib:GetConfigs(), true)
-				end
-			end
-		})
-
-		ConfigList = ManageSection:AddDropdown({
-			Name = "Existing Configs",
-			Options = OrionLib:GetConfigs(),
-			Callback = function(Value)
-				ConfigName = Value
-				-- Wir können das Textfeld hier nicht einfach von außen setzen ohne :Set Methode
-			end
-		})
-
-		ManageSection:AddButton({
-			Name = "Load Config",
-			Callback = function()
-				OrionLib:LoadConfig(ConfigName)
-				OrionLib:MakeNotification({
-					Name = "Configs",
-					Content = "Loaded config: " .. ConfigName,
-					Time = 3
-				})
-			end
-		})
-
-		ManageSection:AddButton({
-			Name = "Delete Config",
-			Callback = function()
-				OrionLib:DeleteConfig(ConfigName)
-				OrionLib:MakeNotification({
-					Name = "Configs",
-					Content = "Deleted config: " .. ConfigName,
-					Time = 3
-				})
-				if ConfigList then
-					ConfigList:Refresh(OrionLib:GetConfigs(), true)
-				end
-			end
-		})
-
-		ManageSection:AddButton({
-			Name = "Refresh List",
-			Callback = function()
-				if ConfigList then
-					ConfigList:Refresh(OrionLib:GetConfigs(), true)
-				end
-			end
-		})
-	end
 
 	return TabFunction
 end   
